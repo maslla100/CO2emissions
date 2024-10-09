@@ -1,7 +1,10 @@
-
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 import pandas as pd
 import pickle
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
@@ -13,27 +16,39 @@ def load_model(model_path):
     try:
         with open(model_path, 'rb') as file:
             model = pickle.load(file)
-        print(f"Model loaded successfully from {model_path}")
+        logging.info(f"Model loaded successfully from {model_path}")
         return model
     except Exception as e:
-        print(f"Error loading the model: {e}")
+        logging.error(f"Error loading the model: {e}")
         return None
 
+# Load the model
 model = load_model(model_path)
 
 # API endpoint to make predictions
 @app.route('/api/predict', methods=['POST'])
 def predict():
     try:
-        # Get input data from the request
-        input_data = request.get_json()
-        input_df = pd.DataFrame(input_data)
+        if model is None:
+            abort(500, description='Model is not available')
         
-        # Make predictions using the loaded model
+        input_data = request.get_json()
+
+        if not input_data:
+            abort(400, description='No input data provided')
+        
+        input_df = pd.DataFrame(input_data)
+
+        if input_df.isnull().values.any():
+            abort(400, description='Input data contains missing values')
+        
         predictions = model.predict(input_df)
+
         return jsonify({'predictions': predictions.tolist()})
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logging.error(f"An error occurred: {str(e)}")
+        return jsonify({'error': f"An error occurred: {str(e)}"}), 500
 
 # API endpoint for health check
 @app.route('/api/health', methods=['GET'])

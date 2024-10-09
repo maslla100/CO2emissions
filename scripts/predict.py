@@ -20,7 +20,7 @@ def make_prediction(model, input_data):
 
 if __name__ == "__main__":
     # Path to the saved model
-    model_file_path = 'co2_emission_model.pkl'  # Replace with the actual model file path
+    model_file_path = 'models/co2_model.pkl'  # Replace with the actual model file path
 
     # Load the model
     model = load_model(model_file_path)

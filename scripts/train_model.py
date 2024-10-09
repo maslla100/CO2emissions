@@ -39,8 +39,8 @@ def save_model(model, output_file_path):
 
 if __name__ == "__main__":
     # File paths
-    input_file_path = 'path_to_cleaned_data.csv'  # Replace with your actual path
-    model_output_path = 'co2_emission_model.pkl'  # Path to save the trained model
+    input_file_path = 'data/cleaned/co2_emissions_cleaned.csv'  # Replace with your actual path
+    model_output_path = 'models/co2_model.pkl'  # Path to save the trained model
     
     # Load the cleaned data
     df = load_data(input_file_path)

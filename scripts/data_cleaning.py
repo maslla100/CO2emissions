@@ -32,8 +32,8 @@ def save_cleaned_data(df, output_file_path):
 
 if __name__ == "__main__":
     # File paths
-    input_file_path = 'path_to_raw_data.csv'  # Replace with your actual path
-    output_file_path = 'path_to_cleaned_data.csv'  # Replace with your actual path
+    input_file_path = 'data/raw/co2_emissions.csv'  # Replace with your actual path
+    output_file_path = 'data/cleaned/co2_emissions_cleaned.csv'  # Replace with your actual path
     
     # Load raw data
     df = load_data(input_file_path)

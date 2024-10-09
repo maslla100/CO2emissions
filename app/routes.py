@@ -1,9 +1,25 @@
-
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, abort
 import pandas as pd
 import pickle
+import logging
 
+logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
+
+# Load the trained model once
+model_path = 'models/co2_model.pkl'
+def load_model(model_path):
+    """ Load the trained model from a file. """
+    try:
+        with open(model_path, 'rb') as file:
+            model = pickle.load(file)
+        logging.info(f"Model loaded successfully from {model_path}")
+        return model
+    except Exception as e:
+        logging.error(f"Error loading the model: {e}")
+        return None
+
+model = load_model(model_path)
 
 # Route for the home page
 @app.route('/')
@@ -13,26 +29,45 @@ def index():
 # Route for visualizations or data summary
 @app.route('/summary')
 def summary():
-    # Example: Load a summary of the CO2 data
-    data_path = 'path_to_cleaned_data.csv'  # Replace with actual path
-    df = pd.read_csv(data_path)
-    summary_data = df.describe().to_dict()
-    return jsonify(summary_data)
+    data_path = 'data/cleaned/co2_emissions_cleaned.csv'
+    try:
+        df = pd.read_csv(data_path)
+        
+        if df.empty:
+            abort(404, description="Dataset is empty")
+        
+        summary_data = df.describe().to_dict()
+        return jsonify(summary_data)
+    
+    except FileNotFoundError:
+        abort(404, description="Data file not found")
+    except Exception as e:
+        logging.error(f"An error occurred: {str(e)}")
+        return jsonify({'error': f"An error occurred: {str(e)}"}), 500
 
-# Route to predict CO2 emissions (if using a model)
+# Route to predict CO2 emissions
 @app.route('/predict', methods=['POST'])
 def predict():
-    model_path = 'models/co2_model.pkl'  # Path to your trained model
+    if model is None:
+        abort(500, description="Model not available")
+
     try:
-        with open(model_path, 'rb') as file:
-            model = pickle.load(file)
-        # Get the data from the POST request
-        data = request.get_json()
-        input_data = pd.DataFrame(data)
-        prediction = model.predict(input_data)
-        return jsonify({'prediction': prediction.tolist()})
+        input_data = request.get_json()
+
+        if not input_data:
+            abort(400, description="No input data provided")
+
+        input_df = pd.DataFrame(input_data)
+
+        if input_df.isnull().values.any():
+            abort(400, description="Input data contains missing values")
+        
+        predictions = model.predict(input_df)
+        return jsonify({'predictions': predictions.tolist()})
+    
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logging.error(f"An error occurred: {str(e)}")
+        return jsonify({'error': f"An error occurred: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
