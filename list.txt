@@ -159,6 +159,7 @@ def index():
         logging.info("Loading data from the database")
         # Load data from the database
         df = pd.read_sql("SELECT * FROM emissions_data", engine)
+        logging.info(f"Data loaded: {df.shape} rows, columns: {df.columns.tolist()}")
         
         # Check if the dataframe is empty
         if df.empty:
@@ -173,6 +174,7 @@ def index():
         # Visualization 1: Global CO2 Emissions Over Time
         years = df.columns[5:]
         global_emissions = df[years].sum()
+        logging.info(f"Global emissions data: {global_emissions}")  # Log global emissions
         global_emissions_fig = px.line(
             x=years,
             y=global_emissions,
@@ -180,11 +182,11 @@ def index():
             title='Global CO2 Emissions Over Time'
         )
         logging.info("Global CO2 Emissions visualization created")
-        logging.info(global_emissions_fig.to_json())  # Correctly log the global emissions figure JSON
-
+        logging.info(global_emissions_fig.to_json())  # Log the figure JSON
 
         # Visualization 2: CO2 Emissions by Country (2020)
         df_2020 = df[['country_name', '2020']]
+        logging.info(f"2020 emissions data: {df_2020.head()}")  # Log a sample of the data
         country_emissions_fig = px.choropleth(
             df_2020,
             locations='country_name',
@@ -195,11 +197,11 @@ def index():
             color_continuous_scale=px.colors.sequential.Plasma
         )
         logging.info("CO2 Emissions by Country visualization created")
-        logging.info(country_emissions_fig.to_json())  # Log country emissions JSON
-
+        logging.info(country_emissions_fig.to_json())  # Log the figure JSON
 
         # Visualization 3: Top 10 CO2 Emitting Countries
         top_emitters = df[['country_name', '2020']].sort_values(by='2020', ascending=False).head(10)
+        logging.info(f"Top 10 CO2 emitters: {top_emitters}")  # Log top 10 emitters
         top_emitters_fig = px.bar(
             top_emitters,
             x='country_name',
@@ -208,12 +210,12 @@ def index():
             labels={'2020': 'CO2 Emissions (kt)', 'country_name': 'Country'}
         )
         logging.info("Top 10 CO2 Emitting Countries visualization created")
-        logging.info(top_emitters_fig.to_json())  # Log top emitters figure JSON
-
+        logging.info(top_emitters_fig.to_json())  # Log the figure JSON
 
         # Visualization 4: CO2 Emissions Over Time for Selected Countries
         selected_countries = ['United States', 'China', 'India', 'Russia', 'Germany']
         df_selected = df[df['country_name'].isin(selected_countries)]
+        logging.info(f"Data for selected countries: {df_selected.head()}")  # Log a sample
         df_selected = df_selected.melt(id_vars=['country_name'], value_vars=years, var_name='Year', value_name='CO2 Emissions (kt)')
         selected_countries_fig = px.line(
             df_selected,
@@ -223,11 +225,11 @@ def index():
             title='CO2 Emissions Over Time for Selected Countries'
         )
         logging.info("CO2 Emissions Over Time for Selected Countries visualization created")
-        logging.info(selected_countries_fig.to_json())  # Log selected countries figure JSON
-
+        logging.info(selected_countries_fig.to_json())  # Log the figure JSON
 
         # Visualization 5: CO2 Emissions vs Population (if population data is available)
         if 'population' in df.columns:
+            logging.info(f"Population data exists, creating scatter plot.")
             emissions_vs_population_fig = px.scatter(
                 df,
                 x='population',
@@ -238,7 +240,7 @@ def index():
                 labels={'2020': 'CO2 Emissions (kt)', 'population': 'Population'}
             )
             logging.info("CO2 Emissions vs Population visualization created")
-            logging.info(emissions_vs_population_fig.to_json())  # Log emissions vs population figure JSON
+            logging.info(emissions_vs_population_fig.to_json())  # Log the figure JSON
         else:
             emissions_vs_population_fig = None
             logging.warning("Population data not available for CO2 Emissions vs Population visualization")
@@ -257,6 +259,7 @@ def index():
     except Exception as e:
         logging.error(f"An error occurred during index processing: {str(e)}")
         return jsonify({'error': f"An error occurred: {str(e)}"}), 500
+
 ---- END OF ./app/routes.py ----
 
 ---- START OF ./requirements.txt ----
@@ -428,13 +431,35 @@ intercept_”hŒscalar”“”hC      A¾”†”R”Œ_sklearn_version”Œ1.4.2”ub.---- END 
 intercept_”h
 Œscalar”“”hECç×YEa¼`@”†”R”Œ_sklearn_version”Œ1.4.2”ub.---- END OF ./models/co2_model.pkl ----
 
+---- START OF ./.elasticbeanstalk/config.yml ----
+branch-defaults:
+  main:
+    environment: CO2-env
+environment-defaults:
+  CO2-env:
+    branch: null
+    repository: null
+global:
+  application_name: CO2
+  default_ec2_keyname: aws-eb
+  default_platform: Python 3.8 running on 64bit Amazon Linux 2
+  default_region: us-east-1
+  include_git_submodules: true
+  instance_profile: null
+  platform_name: null
+  platform_version: null
+  profile: eb-cli
+  sc: git
+  workspace_type: Application
+---- END OF ./.elasticbeanstalk/config.yml ----
+
 ---- START OF ./.env ----
 DATABASE_URL=postgresql://postgres:co2JD613947#1@co2emissions.cluster-clpfmbvmfsji.us-east-1.rds.amazonaws.com:5432/co2emissions
 SERVICE_1_API_KEY=your_service_1_api_key
 SERVICE_2_API_KEY=your_service_2_api_key
 
 
-#psql --host=co2emissions.cluster-clpfmbvmfsji.us-east-1.rds.amazonaws.com --port=5432 --username=postgres --password --dbname=co2emissions---- END OF ./.env ----
+---- END OF ./.env ----
 
 ---- START OF ./static/css/style.css ----
 body {
@@ -909,6 +934,43 @@ if __name__ == "__main__":
     if df_cleaned is not None:
         upload_to_rds(df_cleaned, "emissions_data", DATABASE_URL)
 ---- END OF ./scripts/upload_cleaned_data.py ----
+
+---- START OF ./.github/workflows/deploy.yml ----
+name: Deploy to Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'  # Your project's Python version
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Deploy to Elastic Beanstalk
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          pip install awsebcli
+          eb init -p python-3.x -r ${{ secrets.AWS_REGION }} ${{ secrets.APPLICATION_NAME }} --interactive
+          eb deploy ${{ secrets.ENV_NAME }}
+---- END OF ./.github/workflows/deploy.yml ----
 
 ---- START OF ./templates/index.html ----
 <!DOCTYPE html>
