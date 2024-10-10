@@ -1,14 +1,14 @@
 {
     "database": {
-        "type": "sqlite",
-        "url": "sqlite:///emissions_data.db"
+        "type": "postgresql",
+        "url": ""
     },
     "api": {
         "prediction_endpoint": "/api/predict",
         "health_endpoint": "/api/health"
     },
     "api_keys": {
-        "service_1": "your_service_1_api_key_here",
-        "service_2": "your_service_2_api_key_here"
+        "service_1": "",
+        "service_2": ""
     }
 }

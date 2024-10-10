@@ -1,4 +1,3 @@
-
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -47,8 +46,8 @@ if __name__ == "__main__":
     
     if df is not None:
         # Define features (X) and target (y)
-        X = df.iloc[:, 2:]  # Example: features are columns from index 2 onwards
-        y = df.iloc[:, 1]   # Example: target is the second column (CO2 emissions)
+        X = df.iloc[:, 2:]  # Adjust the feature columns based on your dataset structure
+        y = df.iloc[:, 1]   # Adjust target column
 
         # Split the data into training and testing sets
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
