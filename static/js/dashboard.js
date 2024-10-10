@@ -1,4 +1,3 @@
-
 // JavaScript for interactive visualizations using Plotly
 
 document.addEventListener('DOMContentLoaded', function () {

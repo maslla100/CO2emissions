@@ -7,7 +7,6 @@
     <title>CO2 Emission Dashboard</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="/static/js/dashboard.js" defer></script>
 </head>
 
 <body>
@@ -16,13 +15,63 @@
     </header>
 
     <div class="container">
-        <h2>CO2 Emissions Over Time</h2>
-        <div id="co2-chart" class="chart-container"></div>
+        <h2>Global CO2 Emissions Over Time</h2>
+        <div id="global_emissions_chart" class="chart-container"></div>
+
+        <h2>CO2 Emissions by Country (2020)</h2>
+        <div id="country_emissions_chart" class="chart-container"></div>
+
+        <h2>Top 10 CO2 Emitting Countries (2020)</h2>
+        <div id="top_emitters_chart" class="chart-container"></div>
+
+        <h2>CO2 Emissions Over Time for Selected Countries</h2>
+        <div id="selected_countries_chart" class="chart-container"></div>
+
+        <h2>CO2 Emissions vs Population (2020)</h2>
+        <div id="emissions_vs_population_chart" class="chart-container"></div>
     </div>
 
     <footer>
         <p>&copy; 2024 CO2 Emission Dashboard</p>
     </footer>
+
+    <script type="text/javascript">
+        {% if global_emissions_data %}
+        var globalEmissions = {{ global_emissions_data | tojson | safe }};
+        Plotly.newPlot('global_emissions_chart', globalEmissions.data, globalEmissions.layout);
+        {% else %}
+        document.getElementById('global_emissions_chart').innerHTML = "<p>No data available for Global CO2 Emissions Over Time</p>";
+        {% endif %}
+
+        {% if country_emissions_data %}
+        var countryEmissions = {{ country_emissions_data | tojson | safe }};
+        Plotly.newPlot('country_emissions_chart', countryEmissions.data, countryEmissions.layout);
+        {% else %}
+        document.getElementById('country_emissions_chart').innerHTML = "<p>No data available for CO2 Emissions by Country (2020)</p>";
+        {% endif %}
+
+        {% if top_emitters_data %}
+        var topEmitters = {{ top_emitters_data | tojson | safe }};
+        Plotly.newPlot('top_emitters_chart', topEmitters.data, topEmitters.layout);
+        {% else %}
+        document.getElementById('top_emitters_chart').innerHTML = "<p>No data available for Top 10 CO2 Emitting Countries (2020)</p>";
+        {% endif %}
+
+        {% if selected_countries_data %}
+        var selectedCountries = {{ selected_countries_data | tojson | safe }};
+        Plotly.newPlot('selected_countries_chart', selectedCountries.data, selectedCountries.layout);
+        {% else %}
+        document.getElementById('selected_countries_chart').innerHTML = "<p>No data available for CO2 Emissions Over Time for Selected Countries</p>";
+        {% endif %}
+
+        {% if emissions_vs_population_data %}
+        var emissionsVsPopulation = {{ emissions_vs_population_data | tojson | safe }};
+        Plotly.newPlot('emissions_vs_population_chart', emissionsVsPopulation.data, emissionsVsPopulation.layout);
+        {% else %}
+        document.getElementById('emissions_vs_population_chart').innerHTML = "<p>No data available for CO2 Emissions vs Population (2020)</p>";
+        {% endif %}
+    </script>
+
 </body>
 
 </html>

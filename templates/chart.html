@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CO2 Emission Visualization</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+    <div id="chart"></div>
+    <script type="text/javascript">
+        var graphJSON = {{ graphJSON | safe }};
+        Plotly.newPlot('chart', graphJSON.data, graphJSON.layout);
+    </script>
+</body>
+
+</html>
