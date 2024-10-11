@@ -1071,8 +1071,7 @@ if __name__ == "__main__":
 </html>---- END OF ./templates/chart.html ----
 
 ---- START OF ./Procfile ----
-web: gunicorn app.__init__:app --bind 0.0.0.0:${PORT:-8000}
-
+web: gunicorn app.__init__:app --bind 0.0.0.0:$PORT
 ---- END OF ./Procfile ----
 
 ---- START OF ./data/database/emissions_data.sql ----
