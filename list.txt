@@ -29,7 +29,7 @@ def index():
 import os
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8080))  # Default to 8080 if PORT is not set
+    port = int(os.environ.get('PORT', 8000))  # Default to 8080 if PORT is not set
     app.run(host='0.0.0.0', port=port)
 
 ---- END OF ./app/__init__.py ----
@@ -148,7 +148,7 @@ def index():
 import os
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8080))  # Default to 8080 if PORT is not set
+    port = int(os.environ.get('PORT', 8000))  # Default to 8080 if PORT is not set
     app.run(host='0.0.0.0', port=port)
 
 
@@ -297,7 +297,7 @@ def index():
 ---- END OF ./app/routes.py ----
 
 ---- START OF ./requirements.txt ----
-Flask==2.0.1
+Flask==2.2.0
 pandas==1.3.3
 scikit-learn==0.24.2
 plotly==5.3.1
@@ -306,6 +306,7 @@ gunicorn==20.1.0
 psycopg2-binary==2.9.1
 python-dotenv==0.19.2
 SQLAlchemy==1.4.22
+Werkzeug==2.2.0
 ---- END OF ./requirements.txt ----
 
 ---- START OF ./config/settings.json ----
@@ -968,43 +969,6 @@ if __name__ == "__main__":
     if df_cleaned is not None:
         upload_to_rds(df_cleaned, "emissions_data", DATABASE_URL)
 ---- END OF ./scripts/upload_cleaned_data.py ----
-
----- START OF ./.github/workflows/deploy.yml ----
-name: Deploy to Elastic Beanstalk
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'  # Your project's Python version
-
-      - name: Install dependencies
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
-
-      - name: Deploy to Elastic Beanstalk
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-        run: |
-          pip install awsebcli
-          eb init -p python-3.x -r ${{ secrets.AWS_REGION }} ${{ secrets.APPLICATION_NAME }} --interactive
-          eb deploy ${{ secrets.ENV_NAME }}
----- END OF ./.github/workflows/deploy.yml ----
 
 ---- START OF ./templates/index.html ----
 <!DOCTYPE html>
