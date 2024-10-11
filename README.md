@@ -1,6 +1,8 @@
 
 # CO2 Emission Prediction Project
 
+![CO2 Emission Dashboard Screenshot](image.png)
+
 ## Project Overview
 The **CO2 Emission Prediction Project** is aimed at analyzing historical CO2 emissions data and predicting future emissions using machine learning models. The project uses a web-based dashboard where users can visualize emissions data and make predictions based on historical trends.
 
