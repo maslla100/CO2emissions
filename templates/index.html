@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CO2 Emission Dashboard</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <!-- Use the full Plotly library -->
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 
@@ -27,51 +28,117 @@
         <h2>CO2 Emissions Over Time for Selected Countries</h2>
         <div id="selected_countries_chart" class="chart-container"></div>
 
-        <h2>CO2 Emissions vs Population (2020)</h2>
-        <div id="emissions_vs_population_chart" class="chart-container"></div>
+        <h2>Predict Future CO2 Emissions</h2>
+        <div class="prediction-form">
+            <!-- Added explanation about kilotons of CO2 -->
+            <p>
+                Please enter your estimates for CO2 emissions in the following years.
+                <strong>Note:</strong> CO2 emissions are measured in kilotons (kt) of carbon dioxide.
+                One kiloton equals 1,000 metric tons of CO2 released into the atmosphere.
+            </p>
+
+            <form id="prediction-form">
+                <!-- Input fields for model features (Future years) -->
+                <label for="year2025">CO2 Emissions Estimate for 2025 (kt of CO2):</label>
+                <input type="number" id="year2025" name="year2025" required>
+
+                <label for="year2026">CO2 Emissions Estimate for 2026 (kt of CO2):</label>
+                <input type="number" id="year2026" name="year2026" required>
+
+                <label for="year2027">CO2 Emissions Estimate for 2027 (kt of CO2):</label>
+                <input type="number" id="year2027" name="year2027" required>
+
+                <button type="submit">Predict CO2 Emissions</button>
+            </form>
+
+            <div id="prediction-result">
+                <!-- Placeholder for prediction results -->
+            </div>
+        </div>
     </div>
 
     <footer>
         <p>&copy; 2024 CO2 Emission Dashboard</p>
     </footer>
 
+    <!-- Ensure the script runs after the DOM is loaded -->
     <script type="text/javascript">
-        {% if global_emissions_data %}
-        var globalEmissions = {{ global_emissions_data | tojson | safe }};
-        Plotly.newPlot('global_emissions_chart', globalEmissions.data, globalEmissions.layout);
-        {% else %}
-        document.getElementById('global_emissions_chart').innerHTML = "<p>No data available for Global CO2 Emissions Over Time</p>";
-        {% endif %}
+        // Inject the Plotly data passed from Flask into these variables
+        var globalEmissions = {{ global_emissions_data | safe }};
+        var countryEmissions = {{ country_emissions_data | safe }};
+        var topEmitters = {{ top_emitters_data | safe }};
+        var selectedCountries = {{ selected_countries_data | safe }};
 
-        {% if country_emissions_data %}
-        var countryEmissions = {{ country_emissions_data | tojson | safe }};
-        Plotly.newPlot('country_emissions_chart', countryEmissions.data, countryEmissions.layout);
-        {% else %}
-        document.getElementById('country_emissions_chart').innerHTML = "<p>No data available for CO2 Emissions by Country (2020)</p>";
-        {% endif %}
+        document.addEventListener('DOMContentLoaded', function () {
+            // Plot Global Emissions Chart
+            if (globalEmissions && globalEmissions.data.length > 0) {
+                Plotly.newPlot('global_emissions_chart', globalEmissions.data, globalEmissions.layout);
+            } else {
+                document.getElementById('global_emissions_chart').innerHTML = "<p>No data available for Global CO2 Emissions Over Time</p>";
+            }
 
-        {% if top_emitters_data %}
-        var topEmitters = {{ top_emitters_data | tojson | safe }};
-        Plotly.newPlot('top_emitters_chart', topEmitters.data, topEmitters.layout);
-        {% else %}
-        document.getElementById('top_emitters_chart').innerHTML = "<p>No data available for Top 10 CO2 Emitting Countries (2020)</p>";
-        {% endif %}
+            // Plot Country Emissions Chart
+            if (countryEmissions && countryEmissions.data.length > 0) {
+                Plotly.newPlot('country_emissions_chart', countryEmissions.data, countryEmissions.layout);
+            } else {
+                document.getElementById('country_emissions_chart').innerHTML = "<p>No data available for CO2 Emissions by Country (2020)</p>";
+            }
 
-        {% if selected_countries_data %}
-        var selectedCountries = {{ selected_countries_data | tojson | safe }};
-        Plotly.newPlot('selected_countries_chart', selectedCountries.data, selectedCountries.layout);
-        {% else %}
-        document.getElementById('selected_countries_chart').innerHTML = "<p>No data available for CO2 Emissions Over Time for Selected Countries</p>";
-        {% endif %}
+            // Plot Top Emitters Chart
+            if (topEmitters && topEmitters.data.length > 0) {
+                Plotly.newPlot('top_emitters_chart', topEmitters.data, topEmitters.layout);
+            } else {
+                document.getElementById('top_emitters_chart').innerHTML = "<p>No data available for Top 10 CO2 Emitting Countries (2020)</p>";
+            }
 
-        {% if emissions_vs_population_data %}
-        var emissionsVsPopulation = {{ emissions_vs_population_data | tojson | safe }};
-        Plotly.newPlot('emissions_vs_population_chart', emissionsVsPopulation.data, emissionsVsPopulation.layout);
-        {% else %}
-        document.getElementById('emissions_vs_population_chart').innerHTML = "<p>No data available for CO2 Emissions vs Population (2020)</p>";
-        {% endif %}
+            // Plot Selected Countries Emissions Over Time
+            if (selectedCountries && selectedCountries.data.length > 0) {
+                Plotly.newPlot('selected_countries_chart', selectedCountries.data, selectedCountries.layout);
+            } else {
+                document.getElementById('selected_countries_chart').innerHTML = "<p>No data available for CO2 Emissions Over Time for Selected Countries</p>";
+            }
+        });
+
+        // Handle prediction form submission
+        document.getElementById('prediction-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            // Gather the input data (for the future years being used as features)
+            const year2025 = document.getElementById('year2025').value;
+            const year2026 = document.getElementById('year2026').value;
+            const year2027 = document.getElementById('year2027').value;
+
+            // Prepare data payload
+            const data = JSON.stringify({
+                2025: parseFloat(year2025),
+                2026: parseFloat(year2026),
+                2027: parseFloat(year2027),
+            });
+
+            // Send POST request to the prediction API
+            fetch('/api/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: data
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    // Display the prediction result
+                    document.getElementById('prediction-result').innerHTML = `<p>Based on your inputs, the predicted total CO2 emissions for 2025-2027 are approximately: ${result.predictions[0]} kilotons (kt).</p>`;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('prediction-result').innerHTML = '<p>An error occurred during prediction. Please try again.</p>';
+                });
+        });
     </script>
-
 </body>
 
 </html>

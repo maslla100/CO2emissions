@@ -21,6 +21,8 @@ h2 {
 .container {
     width: 80%;
     margin: 0 auto;
+    padding-bottom: 100px;
+    /* Add extra padding to the bottom of the container */
 }
 
 button {
@@ -51,4 +53,32 @@ footer {
     width: 100%;
     height: 400px;
     margin-top: 20px;
+}
+
+/* New styles for prediction form */
+.prediction-form {
+    margin-top: 40px;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.prediction-form label {
+    display: block;
+    margin: 10px 0 5px;
+}
+
+.prediction-form input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#prediction-result {
+    margin-top: 20px;
+    font-weight: bold;
+    color: #333;
 }

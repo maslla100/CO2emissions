@@ -4,6 +4,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.impute import SimpleImputer
+import matplotlib.pyplot as plt
 import pickle
 
 def load_data_from_db(engine):
@@ -15,16 +16,11 @@ def load_data_from_db(engine):
 
 def preprocess_data(X, y):
     """Impute missing values in the feature matrix and target."""
-    imputer = SimpleImputer(strategy='mean')  # You can also try 'median', 'most_frequent', etc.
-    
-    # Impute X (features)
+    imputer = SimpleImputer(strategy='mean')
     X_imputed = imputer.fit_transform(X)
-    
-    # Drop rows where y (target) is NaN
     non_nan_indices = y.notna()
     X_imputed = X_imputed[non_nan_indices]
     y = y[non_nan_indices]
-    
     return X_imputed, y
 
 def handle_missing_columns(df):
@@ -33,17 +29,13 @@ def handle_missing_columns(df):
     return df
 
 def train_model(X_train, y_train):
-    """Train a model using GridSearchCV for hyperparameter tuning."""
-    # Define models to test
     models = {
         'linear_regression': LinearRegression(),
         'random_forest': RandomForestRegressor(),
-        'hist_gradient_boosting': HistGradientBoostingRegressor()  # Handles missing values natively
+        'hist_gradient_boosting': HistGradientBoostingRegressor()
     }
     
-    # Define parameters for tuning
     param_grid = {
-        'linear_regression': {},
         'random_forest': {
             'n_estimators': [50, 100, 200],
             'max_depth': [10, 20, None]
@@ -57,32 +49,36 @@ def train_model(X_train, y_train):
     best_model = None
     best_score = float('inf')
     
-    for model_name in models:
+    for model_name, model in models.items():
         print(f"Training {model_name}...")
-        grid = GridSearchCV(models[model_name], param_grid[model_name], cv=5, scoring='neg_mean_squared_error', n_jobs=-1)
+        grid = GridSearchCV(model, param_grid.get(model_name, {}), cv=5, scoring='neg_mean_squared_error', n_jobs=-1)
         grid.fit(X_train, y_train)
         
-        print(f"Best parameters for {model_name}: {grid.best_params_}")
         print(f"Best score for {model_name}: {-grid.best_score_}")
-        
         if -grid.best_score_ < best_score:
             best_score = -grid.best_score_
             best_model = grid.best_estimator_
 
-    print("Best model selected.")
     return best_model
 
 def evaluate_model(model, X_test, y_test):
-    """Evaluate the model's performance."""
     y_pred = model.predict(X_test)
     mse = mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
-    print(f"Mean Squared Error: {mse}")
-    print(f"R^2 Score: {r2}")
+    
+    print(f"MSE: {mse}, R²: {r2}")
+    plt.figure(figsize=(10,6))
+    plt.plot(y_test.values, label='Actual CO2 Emissions')
+    plt.plot(y_pred, label='Predicted CO2 Emissions', linestyle='dashed')
+    plt.legend()
+    plt.title('Actual vs Predicted CO2 Emissions')
+    plt.xlabel('Index (Test Data)')
+    plt.ylabel('CO2 Emissions (kt)')
+    plt.show()
+    
     return mse, r2
 
 def save_model(model, output_file_path):
-    """Save the trained model to a file using pickle."""
     with open(output_file_path, 'wb') as file:
         pickle.dump(model, file)
     print(f"Model saved to {output_file_path}")
@@ -92,36 +88,18 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     import os
 
-    # Load environment variables
     load_dotenv()
-
-    # Database connection
     DATABASE_URL = os.getenv("DATABASE_URL")
     engine = create_engine(DATABASE_URL)
 
-    # Load the cleaned data from the database
     df = load_data_from_db(engine)
-
     if df is not None:
-        # Drop columns with all missing values
         df = handle_missing_columns(df)
+        X = df.iloc[:, 5:]  
+        y = df['2020']
 
-        # Define features (X) and target (y)
-        X = df.iloc[:, 5:]  # Assuming numerical features start from the 5th column onward
-        y = df['2020']  # Adjust target column to the year of interest (e.g., '2020')
-
-        # Preprocess the data to handle NaNs in both X and y
         X_imputed, y_cleaned = preprocess_data(X, y)
-
-        # Split the data into training and testing sets
         X_train, X_test, y_train, y_test = train_test_split(X_imputed, y_cleaned, test_size=0.2, random_state=42)
-
-        # Train the model with hyperparameter tuning
         model = train_model(X_train, y_train)
-
-        # Evaluate the model
         evaluate_model(model, X_test, y_test)
-
-        # Save the best model
-        model_output_path = 'models/co2_best_model.pkl'
-        save_model(model, model_output_path)
+        save_model(model, 'models/co2_best_model.pkl')
